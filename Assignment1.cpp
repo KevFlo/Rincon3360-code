@@ -113,7 +113,7 @@ int main ()
   std::cout << "Compfreqsed message: " << compfreqsedMessage << "\n";
 
   largestDecimal = findLargestDecimal(Symbols);
-  numberOfbits = ceil(log2(largestDecimal+1));
+  numberOfbits = ceil(log2(largestDecimal));
   cout << "largestDecimal: " << largestDecimal << "\n";
   cout << "numberOfbits: " << numberOfbits ;
 
