@@ -7,10 +7,10 @@
 using namespace std;
 
 struct arg_struct {
-    string arg1;
-    string arg2;
-    int arg3;
-    vector<string> arg4;
+    string symbols;
+    string compressedbinaryMsg;
+    int bitLength;
+    vector<string> truncatedMsg;
     int frequency;
     string binrep;
 
@@ -21,7 +21,7 @@ struct decompress{
     string compressed;
     int freq;
     vector<string> truncatedMessage;
-    vector<string> solution;
+    string sol;
 } *decompress;
 
 string toBinary (int value, int bitlength){
@@ -54,22 +54,23 @@ int findLargestDecimal(vector<string> arg){
 void *binaryRepfrequencyOfsymbol (void *arguments){
     struct arg_struct *args = (struct arg_struct *)arguments;
     
-    string symbol = args->arg1;
-    int bitlength = args->arg3;
-    cout << "i got to here" << endl;
-    vector<string> trunkMsg = args->arg4;
+    string symbol = args->symbols;
+    int bitlength = args->bitLength;
+    vector<string> trunkMsg = args->truncatedMsg;
     int value = stoi(symbol.substr(2));
     string  binaryRep = toBinary(value,bitlength);
 
     int freq = 0;
-
+    
     for (int i = 0; i < trunkMsg.size(); i++){
+        cout << binaryRep << endl;
         if (trunkMsg[i]==binaryRep){
             freq++;
         }
     }
     args->frequency=freq;
     args->binrep=binaryRep;
+    cout << "i got to here" << endl;
 
     return NULL;
 }
@@ -108,8 +109,9 @@ int main ()
   vector<string> Symbols;
   std::vector<string> decompressArgs;
   std::vector<string> output;
+  std::vector<arg_struct> input;
 
-  std::vector<pthread_t> threads;
+
   
 
   std::cout << "Enter number of symbols in the alphabet: ";
@@ -117,19 +119,25 @@ int main ()
   numberOfSymbolsinAlphabet = stoi(tempinput);
 
   pthread_t th[numberOfSymbolsinAlphabet];
-  threads.reserve(numberOfSymbolsinAlphabet);
+
+  input.reserve(numberOfSymbolsinAlphabet)
   Symbols.reserve(numberOfSymbolsinAlphabet);
 
   std::cout << "Number of symbols in the alphabet: " << numberOfSymbolsinAlphabet << "\n";
+//create the vector of sctructs here so that its already populated with data and you dont need to create at the pthread_create part 
+
   for (int i = 0; i < numberOfSymbolsinAlphabet; i++){
+
+
       std::cout << "Enter symbol " << i << " and symbols code " << "\n" << "use form of symbol value and code : a 2 " << "\n";
+
       std::getline(std::cin,tempinput);
       Symbols.push_back(tempinput);
   }
-  cout << "\n\nSymbols: \n";
-  for (int i = 0; i < Symbols.size(); i++){
-        cout << Symbols[i] << "\n";
-  }
+//   cout << "\n\nSymbols: \n";
+//   for (int i = 0; i < Symbols.size(); i++){
+//         cout << Symbols[i] << "\n";
+//   }
 
   std::cout << "Enter compressed message (sequence of bits)" << "\n";
   std::getline (std::cin,compressedMessage);
@@ -143,19 +151,21 @@ int main ()
   decompressArgs = binaryMessagePerBitLen(compressedMessage, numberOfbits);
   
     struct decompress deargs;
+
+    for (int k = 0; k < Symbols.size(); k++){
+        struct arg_struct args;
+        args.compressedbinaryMsg = compressedMessage;
+        args.bitLength = numberOfbits;
+        args.truncatedMsg = decompressArgs;
+        args.symbols = Symbols[k];
+        argVector.push_back(args);
+    }
   
   
   
 
    for(int j = 0; j < Symbols.size(); j++) {
-        struct arg_struct args;
-        args.arg2 = compressedMessage;
-        args.arg3 = numberOfbits;
-        args.arg4 = decompressArgs;
-        args.arg1 = Symbols[j];
-
-        argVector.push_back(args);
-
+        
 
       
       cout << "main() : creating thread, " << j << endl;
@@ -172,12 +182,13 @@ int main ()
     //Im thinking of just storing it in some struct and then  calling that information somewhere but i would need to creat new structs per thread
     //maybe use Pthread_exit(String<vector>"string binary int freq") but it only returns a number so i am not sure
 
-       deargs.bincode=args->binrep;
-       cout<< "i got to here in main joining threads" << endl;
-       //output.push_back(bincode);
-       deargs.freq=args->frequency;
-       cout << "binary representation: " << deargs.bincode<< endl;  
-       cout << "binary frequency: "<< deargs.freq << " " << endl;
+    //this dont exist in memory you fucking idiot 
+    //    deargs.bincode=args->binrep;
+    //    cout<< "i got to here in main joining threads" << endl;
+    //    //output.push_back(bincode);
+    //    deargs.freq=args->frequency;
+    //    cout << "binary representation: " << deargs.bincode<< endl;  
+    //    cout << "binary frequency: "<< deargs.freq << " " << endl;
        return 0;
    }
 
