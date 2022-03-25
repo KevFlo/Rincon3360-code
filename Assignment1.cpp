@@ -6,24 +6,35 @@
 #include <pthread.h>
 
 using namespace std;
-
+//This is a struct that will hold the initial information for the first thread function that
 struct arg_struct {
+    /*** symbols will be the string input
+     *  The bit length is the largest amount of bits needed to represent the largest decimal in input
+     *  TruncatedMSg will be a vector that holds the binary message but truncated byt the bit length and saved in its segmented form
+     *  frequency will be the frequency of the binary representation of the decimal from the input vector
+     *  binrep will be the binary representation of the decimal values from the input
+    ***/
     string symbols;
-    string compressedbinaryMsg;
     int bitLength;
     vector<string> truncatedMsg;
     int frequency;
     string binrep;
-    string sol;
-    vector<string>output;
 };
+
+// output struct will contain the information for the decompression function
 struct output_{
-    map<string,string> output;
+    /*
+    * Output is a map with the key being the binary representation and the value being the character it is matched to from the input string
+    * Sol is the string returned from the map ex : "a"
+    * symbol will be the binary to be decompressed and matched to the mapping
+    */
+   vector<cha
+    map<string,string> outputmap;
     string sol;
     string symbol;
 };
 
-// binary is fine 
+// To binary just converts decimal number to binary based on the bit length
 string toBinary (int value, int bitlength){
     int decimal = value;
     string binary = "";
@@ -35,7 +46,8 @@ string toBinary (int value, int bitlength){
             binary = "0" + binary;
     return binary;
 }
-//this works dont touch
+//findLargestDecimal will find the largest decimal from the input by passing in the vector containing the
+// inputs and checking the [2] index i.e. where the decimal values are found
 int findLargestDecimal(vector<string> arg){
     std::string symbolValue;
     int largestDecimal = 0;
@@ -49,40 +61,54 @@ int findLargestDecimal(vector<string> arg){
     }
     return largestDecimal;
 }
-
+/*** 
+ * Will take in a struct with the information populated prior to thread creation and
+ * each thread will take a symbol from the symbols vector and find its binary representation
+ * and frequency in the binary compressedMessage. 
+ * ***/
 void *binaryRepfrequencyOfsymbol (void *arguments){
+    //the struct is being pointed to
     struct arg_struct *args = (struct arg_struct *)arguments;
+    // pointing to data in the structure so the thread can access it from memory and do work 
     string symbol = args->symbols;
     int bitlength = args->bitLength;
     vector<string> trunkMsg = args->truncatedMsg;
     int value = stoi(symbol.substr(2));
+    //get the binary representation of the decimal for this specific symbol
+    // cout << symbol << " symbol"  << endl;
+    // cout << value << "value of the symbol " << symbol << '\n';
     string  binaryRep = toBinary(value,bitlength);
+    args->binrep=binaryRep;
     int freq = 0;
-    
+    //Look for the frequency of this binary represantation in the truncated representation of the binary message
     for (int i = 0; i < trunkMsg.size(); i++){
         if (trunkMsg[i]==binaryRep){
             freq++;
         }
     }
+    //each struct in the vector will contain the relevant information for that input 
+    // each thread points to a specific struct in the vecotr and fills its data in by pointing to it here
     args->frequency=freq;
-    args->binrep=binaryRep;
+    // cout << binaryRep << "binaryRep" << endl;
+    
     return NULL;
 }
 
 void *decompressMsg (void *Args){
     struct output_ *args = (struct output_*)Args;
-    map<string,string> hehe = args->output;
+    vector<char, string> pseudoMAP = args->pseudo_map;
+    map<string,string> hehe = args->outputmap;
     string symbol = args->symbol;
     string sol = args->sol;
-
-    // sol = hehe[symbol];
-    sol = args->output[symbol];
+//save the value of the binarry rep to the sol string and save it back to the struct
+    sol = args->outputmap[symbol];
 
     args->sol = sol;
 
     return NULL;
 }
 
+// This function will truncate the binary message based on the bit length to get the correct vecotr representaiton of the message
 vector<string> binaryMessagePerBitLen(string message, int bitLen){
     vector<string> truncatedMessage;
     while (message.length()>0){
@@ -95,22 +121,23 @@ return truncatedMessage;
 
 int main ()
 {
+    //Initiallize the variables to hold the data to be later used in struct creation and pthread creation
   int numberOfSymbolsinAlphabet, largestDecimal, numberOfbits = 0;
   std::string tempinput, symbolAndvalue, compressedMessage, output;
   vector<arg_struct> argVector;
-  vector<output_> Output;
+  vector<output_> OutputV;
   vector<string> Symbols;
+  vector<char, string> Alphabet;
   std::vector<string> decompressArgs;
 
   std::getline (std::cin,tempinput);
   numberOfSymbolsinAlphabet = stoi(tempinput);
-
+// create the number of threads based on number of symbols in the input for the inital threaded function
   pthread_t th[numberOfSymbolsinAlphabet];
 
   Symbols.reserve(numberOfSymbolsinAlphabet);
 
-//create the vector of sctructs here so that its already populated with data and you dont need to create at the pthread_create part 
-    
+    //get the input and populate the vector with that input 
   for (int i = 0; i < numberOfSymbolsinAlphabet; i++){
 
       std::getline(std::cin,tempinput);
@@ -118,12 +145,13 @@ int main ()
   }
 
   std::getline (std::cin,compressedMessage);
-  
+  //finds the largest decimal
   largestDecimal = findLargestDecimal(Symbols);
+  //gets the largest bit representation
   numberOfbits = ceil(log2(largestDecimal));
- 
+    //truncates the message based on the largest bit representation
   decompressArgs = binaryMessagePerBitLen(compressedMessage, numberOfbits);
-  
+  //creates the map for the binary representation and the corresponding char
   map<string,string> outmap;
   
   for (int x =0; x < numberOfSymbolsinAlphabet; x++){
@@ -131,62 +159,73 @@ int main ()
       string tempK = "";
       tempC= Symbols[x][0];
       tempK= (toBinary(stoi(Symbols[x].substr(2)),numberOfbits));
+    
+      //map key = binary representation value is the character 
       outmap.insert(std::pair<std::string,std::string>(tempK, tempC));
   }  
   
     //creates the struct for each symbol 'a 2',..., and pushes back the data to the vector of structs 
   for (int k = 0; k < Symbols.size(); k++){
         struct arg_struct args;
-        args.compressedbinaryMsg = compressedMessage;
         args.bitLength = numberOfbits;
         args.truncatedMsg = decompressArgs;
         args.symbols = Symbols[k];
-        args.sol = "";
         
         int val = stoi(args.symbols.substr(2));
         string  binaryRep = toBinary(val,args.bitLength);
+        args.binrep = binaryRep;
         argVector.push_back(args);
     }
-  Output.reserve(decompressArgs.size());
+    //will save the memory required based on how big the vector needs to be based on the amount of decompressed arg sturctrs
+//   OutputV.reserve(decompressArgs.size());
   for (int a = 0; a < decompressArgs.size(); a++){
+      //the oputput struct is created and populated for each part of the truncated message
         struct output_ outPut;
         outPut.sol = "";
-        outPut.output = outmap;
-        Output.push_back(outPut);
+        outPut.outputmap = outmap;
+        outPut.symbol = "";
+        OutputV.push_back(outPut);
     }
-  
+  //Here the first thread function is created and so are the number of threads required 
    for(int j = 0; j < Symbols.size(); j++) {
+
       if (pthread_create(&th[j], NULL, binaryRepfrequencyOfsymbol, (void *) &argVector[j])) {
          cout << "Error:unable to create thread," << endl;
          return 1;
       }
    }
-   
+   //Join the threads 
    for(int i = 0; i < numberOfSymbolsinAlphabet; i++) {
        pthread_join(th[i], NULL);
    }
-
+    //create thread for each part of the vector for the truncated message 
    pthread_t ths[decompressArgs.size()];
-
+    //second threaded function gets the struct based on its index for the vector of output struct 
    for (int i = 0; i < decompressArgs.size(); i++){
 
-       Output[i].symbol=decompressArgs[i];
-        if (pthread_create(&ths[i], NULL, decompressMsg, (void *) &Output[i])) {
+       OutputV[i].symbol=decompressArgs[i];
+    //    cout << OutputV[i] << "ouptut Vector" << endl;
+
+       //should take output struct which contains binary rep and the map will return the char to the struct
+        if (pthread_create(&ths[i], NULL, decompressMsg, (void *) &OutputV[i])) {
          cout << "Error:unable to create thread," << endl;
          return 1;
       }   
    }
+   //join the threads
    for (int j = 0; j < decompressArgs.size(); j++){
        pthread_join(th[j], NULL);
    }
+   // output the alphabet as per requirements
     cout << "Alphabet: " << endl;
     for (int i = 0; i < argVector.size(); i++){
         
         cout << "Character: " << argVector[i].symbols[0] << ", " << "Code: "<< argVector[i].binrep << ", " << "Frequency: " << argVector[i].frequency << "\n";
     }
-    cout << Output.size() << endl;
-    for(int f = 0;f < Output.size(); f++){
-        output = output+Output[f].sol;
+    //iterate through the output vector of structs and get the string from sol
+    for(int f = 0;f < OutputV.size(); f++){
+        // cout << "output for struct: " << f <<  OutputV[f].sol<< "\n";
+        output = output+OutputV[f].sol;
     }
     cout << "Decompressed message: " << output << endl;
 
