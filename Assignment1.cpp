@@ -28,7 +28,7 @@ struct output_{
     * Sol is the string returned from the map ex : "a"
     * symbol will be the binary to be decompressed and matched to the mapping
     */
-   vector<cha
+    vector< tuple <char, string> > Alphabet;
     map<string,string> outputmap;
     string sol;
     string symbol;
@@ -96,12 +96,20 @@ void *binaryRepfrequencyOfsymbol (void *arguments){
 
 void *decompressMsg (void *Args){
     struct output_ *args = (struct output_*)Args;
-    vector<char, string> pseudoMAP = args->pseudo_map;
+    vector< tuple <char, string> > pseudoAlphabet = args->Alphabet;
     map<string,string> hehe = args->outputmap;
-    string symbol = args->symbol;
+    string symboltemp = args->symbol;
     string sol = args->sol;
 //save the value of the binarry rep to the sol string and save it back to the struct
-    sol = args->outputmap[symbol];
+    sol = args->outputmap[symboltemp];
+    for (int alphaIndex = 0 ; alphaIndex < pseudoAlphabet.size(); alphaIndex++){
+        std::string tempstr,tempOstr;
+        tempstr = get<0>(pseudoAlphabet[alphaIndex]);
+        tempOstr = get<1>(pseudoAlphabet[alphaIndex]);
+        if ( (symboltemp) == (tempstr) ){
+            sol = sol + tempOstr;
+        }
+    }
 
     args->sol = sol;
 
@@ -127,7 +135,7 @@ int main ()
   vector<arg_struct> argVector;
   vector<output_> OutputV;
   vector<string> Symbols;
-  vector<char, string> Alphabet;
+  vector< tuple <char, string> > Alphabet;
   std::vector<string> decompressArgs;
 
   std::getline (std::cin,tempinput);
@@ -155,13 +163,14 @@ int main ()
   map<string,string> outmap;
   
   for (int x =0; x < numberOfSymbolsinAlphabet; x++){
-      string tempC = "";
-      string tempK = "";
+      char tempC;
+      string tempV = "";
       tempC= Symbols[x][0];
-      tempK= (toBinary(stoi(Symbols[x].substr(2)),numberOfbits));
+      tempV= (toBinary(stoi(Symbols[x].substr(2)),numberOfbits));
+      Alphabet.push_back(make_tuple(tempC,tempV));
     
       //map key = binary representation value is the character 
-      outmap.insert(std::pair<std::string,std::string>(tempK, tempC));
+    //   outmap.insert(make_pair(tempK, tempC));
   }  
   
     //creates the struct for each symbol 'a 2',..., and pushes back the data to the vector of structs 
