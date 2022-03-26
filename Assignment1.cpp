@@ -17,6 +17,7 @@ struct arg_struct {
     string symbols;
     int bitLength;
     vector<string> truncatedMsg;
+    vector<string> Symbols;
     int frequency;
     string binrep;
 };
@@ -28,8 +29,8 @@ struct output_{
     * Sol is the string returned from the map ex : "a"
     * symbol will be the binary to be decompressed and matched to the mapping
     */
-    vector< tuple <char, string> > Alphabet;
-    map<string,string> outputmap;
+    vector<string> Alphabet;
+    // map<string,string> outputmap;
     string sol;
     string symbol;
 };
@@ -71,18 +72,25 @@ void *binaryRepfrequencyOfsymbol (void *arguments){
     struct arg_struct *args = (struct arg_struct *)arguments;
     // pointing to data in the structure so the thread can access it from memory and do work 
     string symbol = args->symbols;
+    vector<string> alphabet = args -> Symbols;
     int bitlength = args->bitLength;
     vector<string> trunkMsg = args->truncatedMsg;
     int value = stoi(symbol.substr(2));
     //get the binary representation of the decimal for this specific symbol
-    // cout << symbol << " symbol"  << endl;
-    // cout << value << "value of the symbol " << symbol << '\n';
     string  binaryRep = toBinary(value,bitlength);
-    args->binrep=binaryRep;
+    for (int i = 0; i < alphabet.size(); i++){
+         if (alphabet[i].substr(2) ==  symbol.substr(2)) {
+             args -> Symbols[i].substr(2) = binaryRep;
+             
+         }
+    }
+    // args->Symbols = alphabet;
+    cout << args->Symbols[0].substr(2) << "Did it actually change the SYMBLOS Vector?" << endl;
+    args->binrep = binaryRep;
     int freq = 0;
     //Look for the frequency of this binary represantation in the truncated representation of the binary message
     for (int i = 0; i < trunkMsg.size(); i++){
-        if (trunkMsg[i]==binaryRep){
+        if (trunkMsg[i] == binaryRep){
             freq++;
         }
     }
@@ -96,20 +104,21 @@ void *binaryRepfrequencyOfsymbol (void *arguments){
 
 void *decompressMsg (void *Args){
     struct output_ *args = (struct output_*)Args;
-    vector< tuple <char, string> > pseudoAlphabet = args->Alphabet;
-    map<string,string> hehe = args->outputmap;
-    string symboltemp = args->symbol;
+    
+    vector<string> pseudoAlphabet = args->Alphabet;
+    // map<string,string> hehe = args->outputmap;
+    string symbol = args->symbol;
     string sol = args->sol;
-//save the value of the binarry rep to the sol string and save it back to the struct
-    sol = args->outputmap[symboltemp];
-    for (int alphaIndex = 0 ; alphaIndex < pseudoAlphabet.size(); alphaIndex++){
-        std::string tempstr,tempOstr;
-        tempstr = get<0>(pseudoAlphabet[alphaIndex]);
-        tempOstr = get<1>(pseudoAlphabet[alphaIndex]);
-        if ( (symboltemp) == (tempstr) ){
-            sol = sol + tempOstr;
-        }
-    }
+    // cout << pseudoAlphabet[0] << endl;
+    // cout << symbol << " <-symbol " << sol << "<-sol"  << endl;
+    
+    // for (int alphaIndex = 0 ; alphaIndex < pseudoAlphabet.size(); alphaIndex++){
+    //     cout << "stuff inside pseudo laphabet" << pseudoAlphabet[alphaIndex].substr(0) << endl;
+    //     if (symbol == pseudoAlphabet[alphaIndex].substr(0)){
+    //         cout <<"sol contents" <<sol;
+    //         sol = sol + pseudoAlphabet[alphaIndex].substr(2);
+    //     }
+    // }
 
     args->sol = sol;
 
@@ -135,7 +144,7 @@ int main ()
   vector<arg_struct> argVector;
   vector<output_> OutputV;
   vector<string> Symbols;
-  vector< tuple <char, string> > Alphabet;
+//   vector<char, string > Alphabet;
   std::vector<string> decompressArgs;
 
   std::getline (std::cin,tempinput);
@@ -160,28 +169,19 @@ int main ()
     //truncates the message based on the largest bit representation
   decompressArgs = binaryMessagePerBitLen(compressedMessage, numberOfbits);
   //creates the map for the binary representation and the corresponding char
-  map<string,string> outmap;
-  
-  for (int x =0; x < numberOfSymbolsinAlphabet; x++){
-      char tempC;
-      string tempV = "";
-      tempC= Symbols[x][0];
-      tempV= (toBinary(stoi(Symbols[x].substr(2)),numberOfbits));
-      Alphabet.push_back(make_tuple(tempC,tempV));
-    
-      //map key = binary representation value is the character 
-    //   outmap.insert(make_pair(tempK, tempC));
-  }  
-  
+//   map<string,string> outmap;
+
     //creates the struct for each symbol 'a 2',..., and pushes back the data to the vector of structs 
   for (int k = 0; k < Symbols.size(); k++){
         struct arg_struct args;
         args.bitLength = numberOfbits;
         args.truncatedMsg = decompressArgs;
         args.symbols = Symbols[k];
+        args.Symbols = Symbols;
         
         int val = stoi(args.symbols.substr(2));
         string  binaryRep = toBinary(val,args.bitLength);
+        Symbols[k].substr(2)=binaryRep;
         args.binrep = binaryRep;
         argVector.push_back(args);
     }
@@ -191,12 +191,13 @@ int main ()
       //the oputput struct is created and populated for each part of the truncated message
         struct output_ outPut;
         outPut.sol = "";
-        outPut.outputmap = outmap;
+        outPut.Alphabet = Symbols;
         outPut.symbol = "";
         OutputV.push_back(outPut);
     }
   //Here the first thread function is created and so are the number of threads required 
    for(int j = 0; j < Symbols.size(); j++) {
+       
 
       if (pthread_create(&th[j], NULL, binaryRepfrequencyOfsymbol, (void *) &argVector[j])) {
          cout << "Error:unable to create thread," << endl;
@@ -213,6 +214,7 @@ int main ()
    for (int i = 0; i < decompressArgs.size(); i++){
 
        OutputV[i].symbol=decompressArgs[i];
+       
     //    cout << OutputV[i] << "ouptut Vector" << endl;
 
        //should take output struct which contains binary rep and the map will return the char to the struct
@@ -232,10 +234,10 @@ int main ()
         cout << "Character: " << argVector[i].symbols[0] << ", " << "Code: "<< argVector[i].binrep << ", " << "Frequency: " << argVector[i].frequency << "\n";
     }
     //iterate through the output vector of structs and get the string from sol
-    for(int f = 0;f < OutputV.size(); f++){
-        // cout << "output for struct: " << f <<  OutputV[f].sol<< "\n";
-        output = output+OutputV[f].sol;
-    }
+    // for(int f = 0;f < OutputV.size(); f++){
+    //     cout << "output for struct: " << f <<  OutputV[f].sol<< "\n";
+    //     output = output+OutputV[f].sol;
+    // }
     cout << "Decompressed message: " << output << endl;
 
   return 0;
