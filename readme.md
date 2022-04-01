@@ -8,7 +8,8 @@ The user will execute this program using the following syntax:
 
 ./exec_filename hostname port_no < input_filename
 
-where exec_filename is the name of your executable file, hostname is the address where the server program is located, port_no is the port number used by the server program, and input_filename is the name of the file with a string representing the compressed message (sequence of bits). The hostname and the port number will be available to the client as command-line arguments.
+where exec_filename is the name of your executable file, hostname is the address where the server program is located,
+ port_no is the port number used by the server program, and input_filename is the name of the file with a string representing the compressed message (sequence of bits). The hostname and the port number will be available to the client as command-line arguments.
 
 This program receives the number of bits of the fixed-length codes from the server program (using sockets). Then, your solution creates m child threads (where m is the number of characters in the decompressed message). Each child thread will use the parallel solution from assignment 1 to store the decompressed message into a memory location accessible by the main thread.
 
@@ -29,6 +30,14 @@ Example Input File:
 Finally, after receiving the characters of the decompressed message from the child threads, the main thread prints the decompressed message. Given the previous input file, the expected output is:
 
 Decompressed message: aaabccc
+
+
+
+
+
+
+
+
 The server program:
 The user will execute this program using the following syntax:
 
@@ -36,11 +45,25 @@ The user will execute this program using the following syntax:
 
 where exec_filename is the name of your executable file, port_no is the port number to create the socket, and input_filename is the name of the file with the information about the alphabet. The port number will be available to the server program as a command-line argument.
 
-The server program calculates the number of bits of the fixed-length codes based on the value of the greatest base 10 code in the alphabet. For decimal values greater than zero, you can use the following formula to calculate the number of bits of the fixed-length codes: ceiling(log_2(greatest_base_10_code_in_the_alphabet +1)). Additionally, this program determines the binary representation of each of the symbols in the alphabet (based on the decimal value from the input file).
+The server program calculates the number of bits of the fixed-length codes based on the value of the greatest base 10 code in the alphabet.
+For decimal values greater than zero, you can use the following formula to calculate the number of bits of the 
+fixed-length codes: ceiling(log_2(greatest_base_10_code_in_the_alphabet +1)). 
+Additionally, this program determines the binary representation of each of the symbols in the alphabet (based on the decimal value from the input file).
+
+
+
+
+
+
+
+
+
+
 
 This program receives two types of requests from the client program using sockets:
 
-A request from the main thread of the client program asking for the number of bits of the fixed-length codes. 
+A request from the main thread of the client program asking for the number of bits of the fixed-length codes.
+ 
 One request per child thread of the client program. These threads send the binary code of a symbol in the compressed message, and the server returns the character from the alphabet assigned to that binary sequence.
 To handle multiple requests at the same time, the server program creates a child process per request. For this reason, the parent process needs to handle zombies processes implementing the fireman() call in the primer. Each child process will determine the type of request received from the client program, returning the expected value according to the type of request.
 

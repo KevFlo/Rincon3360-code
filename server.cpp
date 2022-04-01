@@ -12,7 +12,7 @@
 struct foo
 {
     long val;
-    std::string binary, eliasgamma;
+    std::string binary, decompressed;
 };
 
 void fireman(int)
@@ -25,8 +25,11 @@ void fireman(int)
 
 int main(int argc, char *argv[])
 {
+    int numberOfSymbolsinAlphabet, largestDecimal, numberOfbits = 0;
 
     int sockfd, newsockfd, port, clilen;
+    int numberofSymbols = atoi(argv[2]); // from file input 
+
 
     struct sockaddr_in serv_addr, cli_addr;
 
@@ -46,7 +49,17 @@ int main(int argc, char *argv[])
     int b = bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
     if (b < 0)
         std::cout << "ERR - Can't bind" << std::endl;
-        
+    
+    //gettign ready to send number of symbols to client
+    
+    listen(sockfd, 5);
+    clilen = sizeof(cli_addr);
+    newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
+    if (newsockfd < 0)
+        std::cout << "ERR - Can't accept" << std::endl;
+    int n = send(sockfd, &numberofSymbols, sizeof(numberofSymbols), 0);
+
+
 
     // read data
     signal(SIGCHLD, fireman); 
@@ -94,11 +107,11 @@ int main(int argc, char *argv[])
             int counter = 0;
             while (counter < strlen(value.binary.c_str()) - 1)
             {
-                value.eliasgamma = "0" + value.eliasgamma;
+                value.decompressed = "0" + value.decompressed;
                 counter++;
             }
-            value.eliasgamma = value.eliasgamma + value.binary;
-            strcpy(buffer, value.eliasgamma.c_str());
+            value.decompressed;
+            strcpy(buffer, value.decompressed.c_str());
             w = write(newsockfd, buffer, sizeof(long));
             if (w < 0)
                 std::cout << "ERR - Can't send data via socket" << std::endl;
