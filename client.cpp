@@ -46,6 +46,10 @@ void *generateCode(void *foo_ptr)
     if (socket < 0)
         std::cout << "ERR - Can't connect" << std::endl;
 
+    // get number of symbols from socket
+    int numberofSymbols;
+    int r = recv(sockfd, &numberofSymbols, 2, 0);
+
 
     // send data to socket
     char buffer[sizeof(long) + 1];
@@ -65,7 +69,7 @@ void *generateCode(void *foo_ptr)
     value->binary = buffer;
     bzero(buffer, sizeof(long) + 1);
     
-    // read eliasgamma from socket
+    // read decompressed from socket
     r = read(sockfd, buffer, sizeof(long));
     if (r < 0)
         std::cout << "ERR - Can't read from socket" << std::endl;
