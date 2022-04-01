@@ -1,16 +1,20 @@
 Problem:
 
-You must write two programs to implement a distributed version of the parallel fixed-length code decompressor you created for programming assignment 1.
 
-These programs are:
 The client program:
 The user will execute this program using the following syntax:
 
 ./exec_filename hostname port_no < input_filename
 
-where exec_filename is the name of your executable file, hostname is the address where the server program is located, port_no is the port number used by the server program, and input_filename is the name of the file with a string representing the compressed message (sequence of bits). The hostname and the port number will be available to the client as command-line arguments.
+where exec_filename is the name of your executable file, hostname is the address where the server program is located, port_no is the port number used by the server program, and input_filename is the name of the file with a string representing the compressed message (sequence of bits). 
 
-This program receives the number of bits of the fixed-length codes from the server program (using sockets). Then, your solution creates m child threads (where m is the number of characters in the decompressed message). Each child thread will use the parallel solution from assignment 1 to store the decompressed message into a memory location accessible by the main thread.
+
+The hostname and the port number will be available to the client as command-line arguments.
+
+This program receives the number of bits of the fixed-length codes from the server program (using sockets).
+
+ Then, your solution creates m child threads (where m is the number of characters in the decompressed message).
+  Each child thread will use the parallel solution from assignment 1 to store the decompressed message into a memory location accessible by the main thread.
 
 Each child thread determines a character of the decompressed message following the steps presented below:
 
@@ -29,6 +33,21 @@ Example Input File:
 Finally, after receiving the characters of the decompressed message from the child threads, the main thread prints the decompressed message. Given the previous input file, the expected output is:
 
 Decompressed message: aaabccc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 The server program:
 The user will execute this program using the following syntax:
 

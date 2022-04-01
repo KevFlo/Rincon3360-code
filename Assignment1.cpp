@@ -29,7 +29,7 @@ struct output_{
     * Sol is the string returned from the map ex : "a"
     * symbol will be the binary to be decompressed and matched to the mapping
     */
-    vector<string> Alphabet;
+    vector<char,string> Alphabet;
     // map<string,string> outputmap;
     string sol;
     string symbol;
@@ -78,14 +78,7 @@ void *binaryRepfrequencyOfsymbol (void *arguments){
     int value = stoi(symbol.substr(2));
     //get the binary representation of the decimal for this specific symbol
     string  binaryRep = toBinary(value,bitlength);
-    for (int i = 0; i < alphabet.size(); i++){
-         if (alphabet[i].substr(2) ==  symbol.substr(2)) {
-             args -> Symbols[i].substr(2) = binaryRep;
-             
-         }
-    }
-    // args->Symbols = alphabet;
-    cout << args->Symbols[0].substr(2) << "Did it actually change the SYMBLOS Vector?" << endl;
+    
     args->binrep = binaryRep;
     int freq = 0;
     //Look for the frequency of this binary represantation in the truncated representation of the binary message
@@ -105,20 +98,22 @@ void *binaryRepfrequencyOfsymbol (void *arguments){
 void *decompressMsg (void *Args){
     struct output_ *args = (struct output_*)Args;
     
-    vector<string> pseudoAlphabet = args->Alphabet;
-    // map<string,string> hehe = args->outputmap;
+    vector<char,string> pseudoAlphabet = args->Alphabet;
+
     string symbol = args->symbol;
     string sol = args->sol;
     // cout << pseudoAlphabet[0] << endl;
     // cout << symbol << " <-symbol " << sol << "<-sol"  << endl;
-    
-    // for (int alphaIndex = 0 ; alphaIndex < pseudoAlphabet.size(); alphaIndex++){
-    //     cout << "stuff inside pseudo laphabet" << pseudoAlphabet[alphaIndex].substr(0) << endl;
-    //     if (symbol == pseudoAlphabet[alphaIndex].substr(0)){
-    //         cout <<"sol contents" <<sol;
-    //         sol = sol + pseudoAlphabet[alphaIndex].substr(2);
-    //     }
-    // }
+    // For(I<alpha.size())
+    //     {if alpha(i).second== symbol
+    //  {result = alpha(i).first
+    //for each alpha in pseudoAlphabet
+
+    for (int i = 0; i < pseudoAlphabet.size(); i++){
+        if (symbol[0].equals( pseudoAlphabet[i].first)){
+            sol = sol + pseudoAlphabet[i].second;
+        }
+    }
 
     args->sol = sol;
 
@@ -144,7 +139,7 @@ int main ()
   vector<arg_struct> argVector;
   vector<output_> OutputV;
   vector<string> Symbols;
-//   vector<char, string > Alphabet;
+  vector<pair<char,string>> Alphabet;
   std::vector<string> decompressArgs;
 
   std::getline (std::cin,tempinput);
@@ -177,21 +172,27 @@ int main ()
         args.bitLength = numberOfbits;
         args.truncatedMsg = decompressArgs;
         args.symbols = Symbols[k];
-        args.Symbols = Symbols;
         
         int val = stoi(args.symbols.substr(2));
         string  binaryRep = toBinary(val,args.bitLength);
-        Symbols[k].substr(2)=binaryRep;
+
+        pair<char,string> temp;
+        temp.first = Symbols[k][0];
+        temp.second = binaryRep;
+        Alphabet.push_back(temp);
+
         args.binrep = binaryRep;
         argVector.push_back(args);
     }
+
+
     //will save the memory required based on how big the vector needs to be based on the amount of decompressed arg sturctrs
 //   OutputV.reserve(decompressArgs.size());
   for (int a = 0; a < decompressArgs.size(); a++){
       //the oputput struct is created and populated for each part of the truncated message
         struct output_ outPut;
         outPut.sol = "";
-        outPut.Alphabet = Symbols;
+        outPut.Alphabet = Alphabet;
         outPut.symbol = "";
         OutputV.push_back(outPut);
     }
