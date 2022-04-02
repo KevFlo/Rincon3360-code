@@ -29,10 +29,11 @@ void *decompressMsg (void *foo_ptr){
     struct foo *value = (struct foo *)foo_ptr;
     int sockfd;
     struct sockaddr_in serv_addr;
-    struct hostent *server; 
+
     int port = value->port;
 
-    if (server == NULL)
+    
+    if (value->hostname == NULL)
         std::cout << "ERR - No hostname found" << std::endl;
     
     // open socket
@@ -44,7 +45,7 @@ void *decompressMsg (void *foo_ptr){
     bzero((char *)&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
-    bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
+    bcopy((char *)value->hostname->h_addr, (char *)&serv_addr.sin_addr.s_addr, value->hostname->h_length);
 
     // connect to server
     int socket = connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
@@ -55,7 +56,7 @@ void *decompressMsg (void *foo_ptr){
 
     char buffer[256];
     bzero(buffer, 256);
-    strcpy(buffer, value->val.c_str());
+    strcpy(buffer, value->binary.c_str());
     int w = write(sockfd, buffer, 256);
     if (w < 0)
         std::cout << "ERR - Can't send data via socket" << std::endl;
@@ -113,6 +114,8 @@ int main(int argc, char *argv[]){
     // connection data
     bzero((char *)&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
+    bcopy((char *)hostname->h_addr,(char *)&serv_addr.sin_addr.s_addr,
+    hostname->h_length);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(port);
     
@@ -152,7 +155,7 @@ int main(int argc, char *argv[]){
         }   
    }
    //join the threads
-   for (int j = 0; j < decompressArgs.size(); j++){
+   for (int j = 0; j < THREADS; j++){
        pthread_join(tid[j], NULL);
    }
     //print the decompressed message

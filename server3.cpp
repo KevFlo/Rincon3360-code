@@ -17,16 +17,15 @@
 
 
 struct foo
-{   
-    int port;
-    std::string binary, decompressed, val, server;
-    struct hostent *hostname;
+{
+    std::string binary, decompressed, val;
+    std::vector<std::string> AlphabetBin;
+    std::vector<std::string> Charsmap;
 };
 
 void fireman(int)
 {
     while (waitpid(-1, NULL, WNOHANG) > 0){
-        std::cout << "A child process ended" << std::endl;
     }    
 }
 
@@ -65,6 +64,7 @@ int main(int argc, char const *argv[]){
     int sockfd, newsockfd, port, clilen, decimalberOfSymbolsinAlphabet, largestDecimal, decimalberOfbits = 0;   
     std::string tempinput, symbolAndvalue, compressedMessage, output;
     std::vector<std::string> Symbols;
+    std::vector<std::string> Chars;
     std::vector<std::string> Alphabet;
     //getting the number of symbols in the inputfile
     std::getline (std::cin,tempinput);
@@ -78,13 +78,16 @@ int main(int argc, char const *argv[]){
     
     largestDecimal = findLargestDecimal(Symbols);
     decimalberOfbits = ceil(log2(largestDecimal));
-    //for every symbol in the input alphabet create the corresponding translation alphabet and map
-    std::map<std::string,std::string> outmap;
-    for (int k = 0; k < Symbols.size(); k++){
-        std::string binaryRep = toBinary(stoi(Symbols[k].substr(2)),decimalberOfbits);
-        std::string symbol = Symbols[k].substr(0);
-        outmap[binaryRep] = symbol;
+    //make for loop to make alphabet from symbols  and tobinary
+    for (int i = 0; i < Symbols.size(); i++){
+        int val = stoi(Symbols[i].substr(2));
+        std::string temp = toBinary(val, decimalberOfbits);
+        Chars.push_back(Symbols[i].substr(0));
+        Alphabet.push_back(temp);
+
     }
+    
+    
 
     //Now we have the map and the alphabet we can start the server
     //sending  the decimalberOfbits to client via sockets
@@ -135,6 +138,7 @@ int main(int argc, char const *argv[]){
     //read the data from client hopefully the compressed message bits from the THREADS
     signal(SIGCHLD, fireman);
     while (true) {
+
         //listen for connection
         listen(sockfd, 5);
         newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr,(socklen_t *)&clilen);
@@ -147,11 +151,15 @@ int main(int argc, char const *argv[]){
             
             if (newsockfd < 0)
                 std::cout << "ERR - Can't accept" << std::endl;
+
             char buffer[256];
             bzero(buffer, 256);
             int w;
 
             struct foo value;
+            value.AlphabetBin =Alphabet;
+            value.Charsmap = Chars;
+
             //the truncaktion of the binary string is read here
             int r = read(newsockfd, buffer, 256);
             if (r < 0)
@@ -160,11 +168,21 @@ int main(int argc, char const *argv[]){
             value.binary = atol(buffer);
             bzero(buffer, 256);
 
+            
             //using outmap we find the corresponding symbol to value.binary
-            value.decompressed = outmap[value.binary];
+            // value.decompressed = outmap[value.binary];
+
+            //find value.binary in our alphabet vector
+            for (int i = 0; i < Alphabet.size(); i++){
+                if (value.AlphabetBin[i] == value.binary){
+                    value.decompressed = value.Charsmap[i].substr(0);
+                }
+            } 
+
+            
             //send the value to client
             strcpy(buffer, value.decompressed.c_str());
-            w = write(newsockfd,value.decompressed.c_str(),sizeof(value.val));
+            w = write(newsockfd,buffer,256);
             if (w < 0)
                 std::cout << "ERR - Can't write" << std::endl;
             bzero(buffer, 256);
