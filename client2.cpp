@@ -16,22 +16,23 @@
 #include <pthread.h>
 
 struct foo
-{
-    std::string binary, decompressed, val;
+{   
+    int port;
+    std::string binary, decompressed, val, server, hostname;
+    struct hostent *hostname;
 };
 
-int port;
-std::string hostname;
-
 /// pointerfunction to be used in pthread
+struct hostent *server;
 
 void *decompressMsg (void *foo_ptr){
     struct foo *value = (struct foo *)foo_ptr;
     int sockfd;
     struct sockaddr_in serv_addr;
     struct hostent *server; 
+    int port = value->port;
 
-    server = gethostbyname(hostname.c_str());
+    
     if (server == NULL)
         std::cout << "ERR - No hostname found" << std::endl;
     
@@ -62,13 +63,14 @@ void *decompressMsg (void *foo_ptr){
     bzero(buffer, 256);
 
     // Receive the decompressed message from the server
-    int r;
-
-    r = read(sockfd, buffer, 256);
+    int r = read(sockfd, buffer, 256);
     if (r < 0)
         std::cout << "ERR - Can't read from socket" << std::endl;
     value->decompressed = buffer;
     bzero(buffer, 256);
+
+    // close socket
+    close(sockfd);
 
     return NULL;
 }
@@ -84,32 +86,33 @@ std::vector<std::string> binaryMessagePerBitLen(std::string message, int bitLen)
 }
 
 int main(int argc, char *argv[]){
+    int port;
+    struct hostent *hostname;
     std::vector<std::string> decompressArgs;
     std::string compressedMessage;
     int numberOfbits;
 
     port = atoi(argv[2]);
-    hostname = argv[1];
-    
+    hostname = gethostbyname(argv[1]);
     std::getline(std::cin,compressedMessage);
 
     //from Blackboard thanks Dr.Rincon <3
-    int sockfd, protno, n;
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    char buffer[256];
-    struct sockaddr_in serv_addr;
-
     ///                               this is connecting to the server to get the bit lenght then disconnecting to 
     ///                               use the bit lenght to get the binary message and then use the binary message truncaktion
     ///                               to pass into the threaded function which then starts a new connection to the server
     ///                               and sends the binary message to the server and then receives the decompressed message from the server
     // open socket
+    int sockfd, protno, n;
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    char buffer[256];
+    struct sockaddr_in serv_addr;
+
+    
     if (sockfd < 0)
         std::cout << "ERR - Can't open socket" << std::endl;
 
     // connection data
     bzero((char *)&serv_addr, sizeof(serv_addr));
-    port = atoi(argv[1]);
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(port);
@@ -128,9 +131,6 @@ int main(int argc, char *argv[]){
         std::cout << "ERR - Can't read from socket" << std::endl;
     numberOfbits = atol(buffer);
     bzero(buffer,256);
-
-    int rc;
-    // rc = close(sockfd);
     
     decompressArgs = binaryMessagePerBitLen(compressedMessage, numberOfbits);
     // setting up the POSTIX thread variables
@@ -141,6 +141,8 @@ int main(int argc, char *argv[]){
     // for loop to cout everything in decompressArgs
     for (int i = 0; i < THREADS; i++){
         binparts[i].val = decompressArgs[i];
+        binparts[i].port = port;
+        binparts[i].hostname = *hostname;
     }
     //Pthreads go here
     for (int i = 0; i < THREADS; i++){

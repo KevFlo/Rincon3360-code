@@ -26,6 +26,7 @@ void fireman(int)
 int main(int argc, char *argv[])
 {
     int numberOfSymbolsinAlphabet, largestDecimal, numberOfbits = 0;
+    std::string tempinput, symbolAndvalue;
 
     int sockfd, newsockfd, port, clilen;
     int numberofSymbols = atoi(argv[2]); // from file input 
