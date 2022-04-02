@@ -29,7 +29,7 @@ void *decompressMsg (void *foo_ptr){
     struct foo *value = (struct foo *)foo_ptr;
     int sockfd;
     struct sockaddr_in serv_addr;
-    struct hostent *server;
+    struct hostent *server; 
 
     server = gethostbyname(hostname.c_str());
     if (server == NULL)
@@ -53,22 +53,22 @@ void *decompressMsg (void *foo_ptr){
 
     // Send the truncated message to the server
 
-    char buffer[1024];
-    bzero(buffer, 1024);
+    char buffer[256];
+    bzero(buffer, 256);
     strcpy(buffer, value->val.c_str());
-    int w = write(sockfd, buffer, 1024);
+    int w = write(sockfd, buffer, 256);
     if (w < 0)
         std::cout << "ERR - Can't send data via socket" << std::endl;
-    bzero(buffer, 1024);
+    bzero(buffer, 256);
 
     // Receive the decompressed message from the server
     int r;
 
-    r = read(sockfd, buffer, 1024);
+    r = read(sockfd, buffer, 256);
     if (r < 0)
         std::cout << "ERR - Can't read from socket" << std::endl;
     value->decompressed = buffer;
-    bzero(buffer, 1024);
+    bzero(buffer, 256);
 
     return NULL;
 }
@@ -96,9 +96,13 @@ int main(int argc, char *argv[]){
     //from Blackboard thanks Dr.Rincon <3
     int sockfd, protno, n;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    char buffer[1024];
+    char buffer[256];
     struct sockaddr_in serv_addr;
 
+    ///                               this is connecting to the server to get the bit lenght then disconnecting to 
+    ///                               use the bit lenght to get the binary message and then use the binary message truncaktion
+    ///                               to pass into the threaded function which then starts a new connection to the server
+    ///                               and sends the binary message to the server and then receives the decompressed message from the server
     // open socket
     if (sockfd < 0)
         std::cout << "ERR - Can't open socket" << std::endl;
@@ -118,18 +122,18 @@ int main(int argc, char *argv[]){
     // get number of symbols from socket
     int numberofSymbols;
 
-    bzero(buffer,1024);
-    int r = read(sockfd, buffer, sizeof(1024));
+    bzero(buffer,256);
+    int r = read(sockfd, buffer, sizeof(256));
     if (r < 0)
         std::cout << "ERR - Can't read from socket" << std::endl;
     numberOfbits = atol(buffer);
-    bzero(buffer,1024);
+    bzero(buffer,256);
 
     int rc;
-    rc = close(sockfd);
+    // rc = close(sockfd);
     
     decompressArgs = binaryMessagePerBitLen(compressedMessage, numberOfbits);
-
+    // setting up the POSTIX thread variables
     int THREADS = decompressArgs.size();
     pthread_t tid[THREADS];
     struct foo binparts[THREADS];
@@ -150,9 +154,11 @@ int main(int argc, char *argv[]){
    for (int j = 0; j < decompressArgs.size(); j++){
        pthread_join(tid[j], NULL);
    }
-   rc = close(sockfd);
+    //print the decompressed message
+    std::string message;
    for (int i = 0 ; i < THREADS; i++){
-       std::cout << binparts[i].decompressed << std::endl;
+       message += binparts[i].decompressed;
    }
+    std::cout << "Decompressed message: " << message << std::endl;
     return 0;
 }
