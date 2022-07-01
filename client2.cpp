@@ -18,10 +18,10 @@
 struct foo
 {   
     int port;
-    std::string binary, decompressed, val, server;
+    std::string  pattern, TextLine_s, server;
+    std::vector<std::pair<std::string, std::string>> output_string;
     struct hostent *hostname;
 };
-
 /// pointerfunction to be used in pthread
 struct hostent *server;
 
@@ -88,12 +88,12 @@ int main(int argc, char *argv[]){
     int port;
     struct hostent *hostname;
     std::vector<std::string> decompressArgs;
-    std::string compressedMessage;
+    std::string compressedMessage, pattern;
     int numberOfbits;
 
     port = atoi(argv[2]);
     hostname = gethostbyname(argv[1]);
-    std::getline(std::cin,compressedMessage);
+    std::getline(std::cin,pattern;
 
     //from Blackboard thanks Dr.Rincon <3
     ///                               this is connecting to the server to get the bit lenght then disconnecting to 

@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -8,18 +7,22 @@
 #include <sys/wait.h>
 #include <netdb.h>
 #include <iostream>
-#include <iostream>
 #include <string>
+#include <string.h>
 #include <map>
+#include <algorithm>
 #include <vector>
 #include <math.h>
+#include <sstream>
 #include <pthread.h>
+#define d 10
 
 
 struct foo
 {   
     int port;
-    std::string binary, decompressed, val, server;
+    std::string  pattern, TextLine_s, server;
+    std::vector<std::pair<std::string, std::string>> output_string;
     struct hostent *hostname;
 };
 
@@ -30,61 +33,69 @@ void fireman(int)
     }    
 }
 
+std::vector<std::pair<std::string, std::string>> rabinKarp(std::string pattern, std::string TextLine, int q, std::vector<std::pair<std::string, std::string>> output_string ) {
+  std::string output;
+  std::stringstream tmp_stream;
+  std::vector<std::pair<std::string, std::string>> output_string_f = output_string;
+  int m = size(pattern);
+  int n = size(TextLine);
+  int i, j;
+  int p = 0;
+  int t = 0;
+  int h = 1;
 
-std::string toBinary (int value, int bitlength){
-    int decimal = value;
-    std::string code;
-    while(decimal){
-        decimal%2==0?code='0'+code:code='1'+code;
-        decimal/=2;
+  for (i = 0; i < m - 1; i++)
+    h = (h * d) % q;
+
+  // Calculate hash value for pattern and TextLine
+  for (i = 0; i < m; i++) {
+    p = (d * p + pattern[i]) % q;
+    t = (d * t + TextLine[i]) % q;
+  }
+
+  // Find the match
+  for (i = 0; i <= n - m; i++) {
+    if (p == t) {
+      for (j = 0; j < m; j++) {
+        if (TextLine[i + j] != pattern[j])
+          break;
+      }
+      if (j == m){
+        //makes the output string if the patter was matched
+        output = ("Pattern \""+ pattern +"\" in the input TextLine at position " + std::to_string(i));
+        output_string_f.push_back(make_pair(output,pattern));
+      }
     }
-    if (code.length() < bitlength){
-        while( code.length() < bitlength){
-            code='0'+code;
-        }
+
+    if (i < n - m) {
+      t = (d * (t - TextLine[i] * h) + TextLine[i + m]) % q;
+      if (t < 0)
+        t = (t + q);
     }
-    return code;
+  }
+  // makes the output string if the pattern was not found
+  if (output_string_f.size() == 0) {
+    output = ("Pattern \""+ pattern +"\" not found");
+    output_string_f.push_back(make_pair(output,pattern));
+  }
+  return output_string_f;
 }
 
-int findLargestDecimal(std::vector<std::string> arg){
-    std::string symbolValue;
-    int largestDecimal = 0;
-    int temp = 0;
-    for (int i = 0; i < arg.size(); i++){
-        symbolValue = arg[i].substr(2);
-        temp = stoi(symbolValue);
-        if (largestDecimal < temp) {
-            largestDecimal = temp;
-        }
-    }
-    return largestDecimal;
-}
+
 
 int main(int argc, char const *argv[]){
     //all the variables needed to initialize the server and the alphabet
-    int sockfd, newsockfd, port, clilen, decimalberOfSymbolsinAlphabet, largestDecimal, decimalberOfbits = 0;   
-    std::string tempinput, symbolAndvalue, compressedMessage, output;
-    std::vector<std::string> Symbols;
-    std::vector<std::string> Alphabet;
+    std::vector<foo> argVector;
+    int sockfd, newsockfd, port, clilen;   
+    std::string TextLine;
+    std::string pattern;
+    std::vector<std::pair<std::string, std::string>> outputs_S;
+
+    std::string tempinput, compressedMessage;
+
     //getting the number of symbols in the inputfile
     std::getline (std::cin,tempinput);
-    decimalberOfSymbolsinAlphabet = stoi(tempinput);
-
-    //get the input and populate the vector with that input 
-    for (int i = 0; i < decimalberOfSymbolsinAlphabet; i++){
-      std::getline(std::cin,tempinput);
-      Symbols.push_back(tempinput);
-    }
-    
-    largestDecimal = findLargestDecimal(Symbols);
-    decimalberOfbits = ceil(log2(largestDecimal));
-    //for every symbol in the input alphabet create the corresponding translation alphabet and map
-    std::map<std::string,std::string> outmap;
-    for (int k = 0; k < Symbols.size(); k++){
-        std::string binaryRep = toBinary(stoi(Symbols[k].substr(2)),decimalberOfbits);
-        std::string symbol = Symbols[k].substr(0);
-        outmap[binaryRep] = symbol;
-    }
+    TextLine = tempinput;
 
     //Now we have the map and the alphabet we can start the server
     //sending  the decimalberOfbits to client via sockets
@@ -118,20 +129,6 @@ int main(int argc, char const *argv[]){
     char buffer[256];
     bzero(buffer, 256);
 
-    struct foo bitlen;
-
-    bitlen.val = atol(buffer);
-    bzero(buffer, 256);
-
-    bitlen.val = std::to_string(decimalberOfbits);
-
-    //send the bit length to client
-    strcpy(buffer, bitlen.val.c_str());
-    int n = write(newsockfd,bitlen.val.c_str(),sizeof(bitlen.val));
-    if (n < 0)
-        std::cout << "ERR - Can't write" << std::endl;
-    bzero(buffer, 256);
-
     //read the data from client hopefully the compressed message bits from the THREADS
     signal(SIGCHLD, fireman);
     while (true) {
@@ -152,21 +149,24 @@ int main(int argc, char const *argv[]){
             int w;
 
             struct foo value;
-            //the truncaktion of the binary string is read here
+            //the truncaktion of the pattern string is read here
             int r = read(newsockfd, buffer, 256);
             if (r < 0)
                 std::cout << "ERR - Can't read" << std::endl;
             //saving it to struct 
-            value.binary = atol(buffer);
+            value.pattern = atol(buffer);
             bzero(buffer, 256);
 
-            //using outmap we find the corresponding symbol to value.binary
-            value.decompressed = outmap[value.binary];
+            //using outmap we find the corresponding symbol to value.pattern
+            value.TextLine_s = TextLine;
+            value.output_string = outputs_S;
+            value.output_string = rabinKarp(value.pattern, TextLine, q, value.output_string);
+            argVector.push_back(value);
             //send the value to client
-            strcpy(buffer, value.decompressed.c_str());
-            w = write(newsockfd,value.decompressed.c_str(),sizeof(value.val));
-            if (w < 0)
-                std::cout << "ERR - Can't write" << std::endl;
+            // strcpy(buffer, value.output_string);
+            // w = write(newsockfd,value.output_string,sizeof(value.));
+            // if (w < 0)
+            //     std::cout << "ERR - Can't write" << std::endl;
             bzero(buffer, 256);
             close(newsockfd);
             _exit(0);
