@@ -18,7 +18,8 @@
 struct foo
 {   
     int port;
-    std::string binary, decompressed, val, server;
+    std::string pattern, server;
+    std::string pattenr_location;
     struct hostent *hostname;
 };
 
@@ -52,21 +53,21 @@ void *decompressMsg (void *foo_ptr){
     if (socket < 0)
         std::cout << "ERR - Can't connect" << std::endl;
 
-    // Send the truncated message to the server
+    // Send the pattern message to the server
 
     char buffer[256];
     bzero(buffer, 256);
-    strcpy(buffer, value->binary.c_str());
+    strcpy(buffer, value->pattern.c_str());
     int w = write(sockfd, buffer, 256);
     if (w < 0)
         std::cout << "ERR - Can't send data via socket" << std::endl;
     bzero(buffer, 256);
 
-    // Receive the decompressed message from the server
+    // Receive the position vector from the server
     int r = read(sockfd, buffer, 256);
     if (r < 0)
         std::cout << "ERR - Can't read from socket" << std::endl;
-    value->decompressed = buffer;
+    value->pattenr_location = buffer;
     bzero(buffer, 256);
 
     // close socket
@@ -75,26 +76,21 @@ void *decompressMsg (void *foo_ptr){
     return NULL;
 }
 
-std::vector<std::string> binaryMessagePerBitLen(std::string message, int bitLen){
-    std::vector<std::string> truncatedMessage;
-    while (message.length()>0){
-        std::string bin = message.substr(0, bitLen);
-        truncatedMessage.push_back(bin);
-        message = message.substr(bitLen);
-    }
-    return truncatedMessage;
-}
 
 int main(int argc, char *argv[]){
     int port;
     struct hostent *hostname;
-    std::vector<std::string> decompressArgs;
-    std::string compressedMessage;
+
+    std::vector<std::string> patterns;
+    std::string pattern;
     int numberOfbits;
 
     port = atoi(argv[2]);
     hostname = gethostbyname(argv[1]);
-    std::getline(std::cin,compressedMessage);
+    //this will keep getting the patterns from clinet input file and stores them in a vector
+    while (std::cin >> pattern){
+        patterns.push_back(pattern);
+    }
 
     //from Blackboard thanks Dr.Rincon <3
     ///                               this is connecting to the server to get the bit lenght then disconnecting to 
@@ -124,32 +120,28 @@ int main(int argc, char *argv[]){
     if (socket < 0)
         std::cout << "ERR - Can't connect" << std::endl;
 
-    // get number of symbols from socket
-    int numberofSymbols;
 
     bzero(buffer,256);
     int r = read(sockfd, buffer, sizeof(256));
     if (r < 0)
         std::cout << "ERR - Can't read from socket" << std::endl;
-    numberOfbits = atol(buffer);
-    bzero(buffer,256);
-    
-    decompressArgs = binaryMessagePerBitLen(compressedMessage, numberOfbits);
+
+
     // setting up the POSTIX thread variables
-    int THREADS = decompressArgs.size();
+    int THREADS = patterns.size();
     pthread_t tid[THREADS];
-    struct foo binparts[THREADS];
+    struct foo pattern_holder[THREADS];
 
     // for loop to cout everything in decompressArgs
     for (int i = 0; i < THREADS; i++){
-        binparts[i].val = decompressArgs[i];
-        binparts[i].port = port;
-        binparts[i].hostname = hostname;
+        pattern_holder[i].pattern = patterns[i];
+        pattern_holder[i].port = port;
+        pattern_holder[i].hostname = hostname;
     }
     //Pthreads go here
     for (int i = 0; i < THREADS; i++){
             //Will create the threads needed to decompress the message
-            if (pthread_create(&tid[i], NULL, decompressMsg, (void *) &binparts[i])) {
+            if (pthread_create(&tid[i], NULL, decompressMsg, (void *) &pattern_holder[i])) {
                 std::cout << "Error:unable to create thread," << std::endl;
                 return 1;
         }   
@@ -159,9 +151,9 @@ int main(int argc, char *argv[]){
        pthread_join(tid[j], NULL);
    }
     //print the decompressed message
-    std::string message;
+   std::string message;
    for (int i = 0 ; i < THREADS; i++){
-       message += binparts[i].decompressed;
+       message += pattern_holder[i].decompressed;
    }
     std::cout << "Decompressed message: " << message << std::endl;
     return 0;

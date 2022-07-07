@@ -18,9 +18,8 @@
 
 struct foo
 {
-    std::string binary, decompressed, val;
-    std::vector<std::string> AlphabetBin;
-    std::vector<std::string> Charsmap;
+    std::string pattern;
+    std::string pattenr_location;
 };
 
 void fireman(int)
@@ -30,54 +29,19 @@ void fireman(int)
 }
 
 
-std::string toBinary (int value, int bitlength){
-    int decimal = value;
-    std::string code;
-    while(decimal){
-        decimal%2==0?code='0'+code:code='1'+code;
-        decimal/=2;
-    }
-    if (code.length() < bitlength){
-        while( code.length() < bitlength){
-            code='0'+code;
-        }
-    }
-    return code;
-}
-
-int findLargestDecimal(std::vector<std::string> arg){
-    std::string symbolValue;
-    int largestDecimal = 0;
-    int temp = 0;
-    for (int i = 0; i < arg.size(); i++){
-        symbolValue = arg[i].substr(2);
-        temp = stoi(symbolValue);
-        if (largestDecimal < temp) {
-            largestDecimal = temp;
-        }
-    }
-    return largestDecimal;
-}
-
 int main(int argc, char const *argv[]){
     //all the variables needed to initialize the server and the alphabet
-    int sockfd, newsockfd, port, clilen, decimalberOfSymbolsinAlphabet, largestDecimal, decimalberOfbits = 0;   
-    std::string tempinput, symbolAndvalue, compressedMessage, output;
+    int sockfd, newsockfd, port, clilen = 0;   
+    std::string tempinput, pattern_s, pattern_sloc, output, textline;
     std::vector<std::string> Symbols;
     std::vector<std::string> Chars;
     std::vector<std::string> Alphabet;
     //getting the number of symbols in the inputfile
     std::getline (std::cin,tempinput);
-    decimalberOfSymbolsinAlphabet = stoi(tempinput);
+    textline = stoi(tempinput);
 
-    //get the input and populate the vector with that input 
-    for (int i = 0; i < decimalberOfSymbolsinAlphabet; i++){
-      std::getline(std::cin,tempinput);
-      Symbols.push_back(tempinput);
-    }
     
-    largestDecimal = findLargestDecimal(Symbols);
-    decimalberOfbits = ceil(log2(largestDecimal));
+
     //make for loop to make alphabet from symbols  and tobinary
     for (int i = 0; i < Symbols.size(); i++){
         int val = stoi(Symbols[i].substr(2));
