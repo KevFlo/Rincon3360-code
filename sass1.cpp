@@ -19,7 +19,6 @@ struct arg_struct {
 // yoinked from G4G<geeks4geeks> but the out put was modified as well as return value and arguments
 std::vector<std::pair<std::string, std::string>> rabinKarp(std::string pattern, std::string text, int q, std::vector<std::pair<std::string, std::string>> output_string ) {
   std::string output;
-  std::stringstream tmp_stream;
   std::vector<std::pair<std::string, std::string>> output_string_f = output_string;
   int m = size(pattern);
   int n = size(text);

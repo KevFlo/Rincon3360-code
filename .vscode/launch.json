@@ -5,17 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "clang++ - Build and debug active file",
-            "type": "cppdbg",
+            "name": "(lldb) Launch",
+            "type": "lldb",//"cppdbg",
             "request": "launch",
+  //          "preLaunchTask": "Build C++",
             "program": "${fileDirname}/${fileBasenameNoExtension}",
             "args": [],
-            "stopAtEntry": true,
+          //  "stopAtEntry": true,
             "cwd": "${fileDirname}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "C/C++: clang++ build active file"
-        }
-    ]
+         //   "environment": [],
+         //   "externalConsole": true,
+         //   "MIMode": "lldb",
+        },
+        
+    ],
 }

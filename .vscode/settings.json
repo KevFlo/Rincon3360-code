@@ -68,6 +68,11 @@
         "*.tcc": "cpp",
         "deque": "cpp",
         "memory_resource": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "__tree": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "variant": "cpp",
+        "__memory": "cpp"
     }
 }
